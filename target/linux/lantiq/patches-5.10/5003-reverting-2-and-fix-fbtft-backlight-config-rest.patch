@@ -1,0 +1,13 @@
+diff --git a/drivers/staging/fbtft/fbtft-core.c b/drivers/staging/fbtft/fbtft-core.c
+index 29777cc..fb6fece 100644
+--- a/drivers/staging/fbtft/fbtft-core.c
++++ b/drivers/staging/fbtft/fbtft-core.c
+@@ -78,7 +78,7 @@ static int fbtft_request_one_gpio(struct fbtft_par *par,
+ 	struct device *dev = par->info->device;
+ 
+ 	*gpiop = devm_gpiod_get_index_optional(dev, name, index,
+-					       GPIOD_OUT_LOW);
++					       GPIOD_OUT_HIGH);
+ 	if (IS_ERR(*gpiop))
+ 		return dev_err_probe(dev, PTR_ERR(*gpiop), "Failed to request %s GPIO\n", name);
+ 

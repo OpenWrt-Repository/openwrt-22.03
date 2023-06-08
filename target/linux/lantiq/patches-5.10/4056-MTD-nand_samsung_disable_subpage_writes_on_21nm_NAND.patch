@@ -1,0 +1,43 @@
+Index: linux-5.10.181/drivers/mtd/nand/raw/nand_samsung.c
+===================================================================
+--- linux-5.10.181.orig/drivers/mtd/nand/raw/nand_samsung.c
++++ linux-5.10.181/drivers/mtd/nand/raw/nand_samsung.c
+@@ -14,6 +14,7 @@ static void samsung_nand_decode_id(struct nand_chip *chip)
+ 	struct nand_ecc_props requirements = {};
+ 	struct mtd_info *mtd = nand_to_mtd(chip);
+ 	struct nand_memory_organization *memorg;
++	u8 *d  = chip->id.data;
+ 
+ 	memorg = nanddev_get_memorg(&chip->base);
+ 
+@@ -94,13 +95,19 @@ static void samsung_nand_decode_id(struct nand_chip *chip)
+ 		}
+ 	} else {
+ 		nand_decode_ext_id(chip);
+-
+ 		if (nand_is_slc(chip)) {
+ 			switch (chip->id.data[1]) {
+ 			/* K9F4G08U0D-S[I|C]B0(T00) */
+ 			case 0xDC:
+ 				requirements.step_size = 512;
+ 				requirements.strength = 1;
++				if (chip->id.len > 4 &&
++				    (chip->id.data[4] & GENMASK(1, 0)) == 0x1) {
++					chip->options |= NAND_NO_SUBPAGE_WRITE;
++					pr_debug("samsung_nand_decode_id: id.data[1] is 0x%02X, disabling subpage writes\n", d[1]);
++				} else {
++					pr_debug("samsung_nand_decode_id: id.data[1] is 0x%02X, allowing subpage writes\n", d[1]);
++				}
+ 				break;
+ 
+ 			/* K9F1G08U0E 21nm chips do not support subpage write */
+@@ -121,6 +128,9 @@ static void samsung_nand_decode_id(struct nand_chip *chip)
+ static int samsung_nand_init(struct nand_chip *chip)
+ {
+ 	struct mtd_info *mtd = nand_to_mtd(chip);
++	u8 *d  = chip->id.data;
++	pr_debug("samsung_nand_decode_id: ID is len=%d, %02X %02X %02X %02X %02X %02X %02X %02X\n",
++		chip->id.len, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+ 
+ 	if (mtd->writesize > 512)
+ 		chip->options |= NAND_SAMSUNG_LP_OPTIONS;

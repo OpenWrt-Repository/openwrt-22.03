@@ -1,0 +1,43 @@
+diff --git a/drivers/net/ethernet/lantiq_xrx200_legacy.c b/drivers/net/ethernet/lantiq_xrx200_legacy.c
+index e25b1c4..b599d31 100644
+--- a/drivers/net/ethernet/lantiq_xrx200_legacy.c
++++ b/drivers/net/ethernet/lantiq_xrx200_legacy.c
+@@ -1810,14 +1810,34 @@ static void xrx200_of_port(struct xrx200_priv *priv, struct device_node *port)
+ 	addr = of_get_property(p->phy_node, "reg", NULL);
+ 	if (!addr)
+ 		return;
+-
+-	p->num = *id;
+-	p->phy_addr = *addr;
+-
+ 	ret = of_get_phy_mode(port, &p->phy_if);
+ 	if (ret)
+ 		pr_err("Can't find phy-mode for port\n");
+ 
++	p->num = *id;
++	p->phy_addr = *addr;
++	p->phy_if = of_get_phy_mode(port);
++	if(p->phy_if == PHY_INTERFACE_MODE_RGMII) {
++		if(!of_property_read_u8(port, "tx-delay", &p->tx_delay)){
++			if(MII_PCDU_DLY_MAX < p->tx_delay) {
++				pr_info("Invalid tx-delay value:%hhu!", p->tx_delay);
++				p->tx_delay = 1;
++			}
++		} else {
++			p->tx_delay = 1;
++		}
++		pr_info("Set tx-delay:%hhu", p->tx_delay);
++
++		if(!of_property_read_u8(port, "rx-delay", &p->rx_delay)) {
++			if( MII_PCDU_DLY_MAX < p->rx_delay){
++				pr_info("Invalid rx-delay value:%hhu!", p->rx_delay);
++				p->rx_delay = 0;
++			}
++		} else {
++			p->rx_delay = 0;
++		}
++		pr_info("Set rx-delay:%hhu", (u32)p->rx_delay);
++	}
+ 	if (p->phy_addr > 0x10)
+ 		p->flags = XRX200_PORT_TYPE_MAC;
+ 	else
